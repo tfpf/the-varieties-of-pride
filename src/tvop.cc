@@ -53,6 +53,18 @@ std::size_t read_source(std::string const& source_file)
 }
 
 /******************************************************************************
+ * Check whether the specified file is readable.
+ *
+ * @param fname
+ *
+ * @return `true` if `fname` can be read, else `false`.
+ *****************************************************************************/
+bool file_readable(std::string const& fname)
+{
+    return std::ifstream(fname).good();
+}
+
+/******************************************************************************
  * Main function.
  *****************************************************************************/
 int main(int const argc, char const* argv[])
@@ -65,12 +77,19 @@ int main(int const argc, char const* argv[])
     std::string source_file = argv[1];
     std::string output_file = (argc < 3) ? "a.out" : argv[2];
 
+    // Is the program valid?
     std::size_t proxy_index = read_source(source_file);
     std::string proxy_source_file = "lib/" + std::to_string(proxy_index) + ".cc";
-    std::string command = "g++ -o " + output_file + ' ' + proxy_source_file;
+    if(!file_readable(proxy_source_file))
+    {
+        THROW(std::invalid_argument, source_file + " is not a valid TVOP source file.")
+    }
+
+    // Tell a C++ compiler to compile the proxy program.
+    std::string command = "g++ -o " + output_file + ' ' + proxy_source_file + " 2> /dev/null";
     if(std::system(command.c_str()) != EXIT_SUCCESS)
     {
-        THROW(std::runtime_error, "Unknown error.")
+        THROW(std::runtime_error, "C++ compiler reported an error. Perhaps the output file couldn't be written?")
     }
     return EXIT_SUCCESS;
 }
